@@ -11,17 +11,7 @@ tickers = sf.get_usable_tickers()
 start_date = '2020-08-11'
 end_date = '2020-08-12'
 
-def get_minutely(ticker):
-    
-    # write data
-    raw_data_path = sf.get_csv_path('raw-minute', ticker)
-    new_data = yf.download(ticker, interval = "1m", start = start_date, end = end_date)
-    new_data.to_csv(raw_data_path)
-
-# write all the data
-for ticker in tickers:
-    get_minutely(ticker)
-    
+master_raw_df = pd.read_csv(sf.get_csv_path('master'))
 
 
 # add TA variables

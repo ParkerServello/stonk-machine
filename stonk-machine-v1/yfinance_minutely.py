@@ -1,4 +1,4 @@
-import stonk_functions as sf
+import stonk_functions_v2 as sf
 import yfinance as yf
 import pandas as  pd
 import datetime as dt
@@ -14,37 +14,36 @@ tickers = sf.get_tickers()
 # for testing
 tickers = tickers[:10]
 
-# start end dates
-start_date = '2020-08-11'
-end_date = '2020-08-12'
+# end date should be yesterday to avoid gross data
+end_date = dt.datetime.strftime(dt.datetime.now() + dt.timedelta(-1), '%Y-%m-%d')
 
 # write path
-master_raw_path = sf.get_csv_path('master')
+raw_data_path = sf.get_csv_path('raw')
 
-# check to see if master exists
-initial_run = not os.path.exists(master_raw_path)  
+# check to see if raw data exists
+initial_run = not os.path.exists(raw_data_path)  
 
-# get data starting...
+# get data starting <date>
 if initial_run:
     
-    # initialize master_raw
-    master_raw_df = pd.DataFrame()
+    # initialize raw data
+    raw_df = pd.DataFrame()
     
     # get all the data
-    new_wide_df = yf.download(tickers, interval = "1m", group_by = 'ticker', start = '2020-08-11', end='2020-08-12')
+    new_wide_df = yf.download(tickers, interval = "1m", group_by = 'ticker', start = '2020-08-14', end=end_date)
 
 else:    
-    # read the current master
-    master_raw_df = pd.read_csv(master_raw_path)
+    # read the current raw data
+    raw_df = pd.read_csv(raw_data_path)
     
     # get the last minute of data that we currently have
-    start_time = master_raw_df['datetime'].max()
+    start_time = raw_df['datetime'].max()
     
     # convert to from datetime64[ns, America/New_York] to datetime 
     start_time = dt.datetime.utcfromtimestamp((np.datetime64(start_time) - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's'))
 
-    # ping yahoo for data
-    new_wide_df = yf.download(tickers, interval = "1m", group_by = 'ticker', start=start_time)
+    # ping yahoo for data    
+    new_wide_df = yf.download(tickers, interval = "1m", group_by = 'ticker', start=start_time, end=end_date)
 
 
 # narrow the data
@@ -57,14 +56,14 @@ for ticker in tickers:
 # add datetime as a column
 new_narrow_df = new_narrow_df.reset_index().rename({'Datetime':'datetime'}, axis=1) 
 
-# change to datetime
+# change from datetime64[ns, east/pacific] to string
 new_narrow_df['datetime'] = pd.Series(new_narrow_df['datetime'].astype(str).map(lambda t: t[:19])).astype(str)
 
-# append to master
-master_raw_df = master_raw_df.append(new_narrow_df)
+# append to raw
+raw_df = raw_df.append(new_narrow_df)
 
 # put ticker rows together
-master_raw_df = master_raw_df.sort_values(['ticker', 'datetime'], ascending=False)
+raw_df = raw_df.sort_values(['ticker', 'datetime'], ascending=False)
     
 # write the data
-master_raw_df.to_csv(master_raw_path, index=False)
+raw_df.to_csv(raw_data_path, index=False)
