@@ -10,7 +10,7 @@ today = str(dt.datetime.date(dt.datetime.now()))
 def get_stonk_project_path():
     
     # repository path
-    return r'C:\repos\stonk-machine'
+    return r'C:\Users\VanillaBean\Documents\PyProjects\stonk-machine'
       
 def get_tickers():
     

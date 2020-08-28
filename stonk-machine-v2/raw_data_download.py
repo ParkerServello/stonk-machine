@@ -1,12 +1,10 @@
-
-
 import stonk_functions_v2 as sf
 import yfinance as yf
 import pandas as  pd
 import datetime as dt
 import pandas_market_calendars as mcal
 
-data_prefix = f'C:\\repos\\stonk-machine\\data\\'
+data_prefix = f'C:\\Users\\VanillaBean\\Documents\\PyProjects\\stonk-machine\\data\\'
 
 # get yahoo finance download arguments: ticker list, end date, start date
 tickers = sf.get_tickers()
@@ -16,7 +14,7 @@ tickers = tickers[:10]
 # build date lists using only trading days
 nyse = mcal.get_calendar('NYSE')
 date_df = pd.DataFrame()
-date_df['date'] = nyse.schedule(start_date='2020-08-13', end_date='2020-08-17').index
+date_df['date'] = nyse.schedule(start_date='2020-08-01', end_date='2020-08-27').index
 date_df['next_date'] = date_df['date'] + dt.timedelta(1)
 
 # get the raw data then write it out so we don't have to ping yahoo finance every the time

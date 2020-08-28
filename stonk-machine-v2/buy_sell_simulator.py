@@ -1,127 +1,105 @@
 import stonk_functions_v2 as sf
 import pandas as  pd
-import datetime as dt
 import pandas_market_calendars as mcal
+import sys
 
-data_prefix = f'C:\\repos\\stonk-machine\\data\\'
+data_prefix = f'C:\\Users\\VanillaBean\\Documents\\PyProjects\\stonk-machine\\data\\raw_data_'
 
 
 
-# build date lists using only trading days
-#date_df = pd.DataFrame()
-#date_df['date'] = nyse.schedule(start_date='2020-08-13', end_date='2020-08-17').index
-#date_df['next_date'] = date_df['date'] + dt.timedelta(1)
-dates = mcal.get_calendar('NYSE').schedule(start_date='2020-08-13', end_date='2020-08-17').index
-
-date = dates[1]
+# build date lists using only trading days and convert to strings
+dates = mcal.get_calendar('NYSE').schedule(start_date='2020-08-01', end_date='2020-08-25').index
+dates = [date.strftime('%Y-%m-%d') for date in dates]
 
 # set intitial variables
 state = 'buy'
 data_dict = {}
 buy_minutes = pd.DataFrame()
+sell_prices = []
 
-for date in date_df['date']:
+for date in dates:
     
-    date = date.strftime('%Y-%m-%d')
+    # reset the minute counter
+    minute = 1
     
-    # get the previous days last few minutes
+    # get the number of minutes for that day, some days the market closes early
+    
+    # get the previous day's last few minutes
     minutes_df = sf.create_day_start_df(date, minutes=30)
     
     # get list of tickers
     tickers = set(minutes_df['Ticker'])
     
-    # store ticker dataframes
+    # store ticker dataframes in a dictionary {ticker:df}
     for ticker in tickers:
         data_dict[ticker] = minutes_df[minutes_df['Ticker'] == ticker]
-    
-    minute = 0
         
     while state == 'sell':
         
+        # sell at the beginning of the day for testing, we'll play with conditions
         
+        # get the ticker to buy
+        ticker = list(buy_minutes['Ticker'])[-1]
+        
+        # store the sell data
+        sell_prices.append(list(data_dict[ticker]['Close'])[-1])
+                
+        # switch states
+        state = 'buy'
     
     while state == 'buy':
-    
+        
+        # don't buy the last day
+        if date == dates[-1]:
+            break
+        
+        # read the next minute's worth of data so we can append it to each ticker
+        minute_df = pd.read_parquet(data_prefix + date + f'\\Minute={minute}')  
+        minute += 1
+        
+        # progress print
+        sys.stdout.write(f"\r{date} {minute}")
+        sys.stdout.flush()
+        
         for ticker in tickers:
             
-            # compue TA features
+            # compute TA features
             current_data = sf.add_ta_features(data_dict[ticker])            
             
             # check for buy indicator
-            if current_data['buy'][-1] == True:
+            if list(current_data['buy'])[-1] == True:
                 
                 # store row
-                buy_minutes = buy_minutes.append(data_dict[ticker].tail(1))
+                buy_minutes = buy_minutes.append(data_dict[ticker].tail(1), sort=False)
 
                 # switch to sell mode
                 state = 'sell'
                 
-            # if we didn't buy, add a minute and recompute TA features
+                # stop searching for a buy
+                break
+                
+            # if we didn't buy, add a minute of data
             else:
-                
-                
-                    
-                    
-                
-
-today_df = pd.DataFrame()
-
-# keep the current min date and stop if there's no buy signal before it
-# add TA variables to each date csv
-cnt = 0
-for date in date_df['date']:
-    
-    # read raw data
-    date = date.strftime('%Y-%m-%d')
-    raw_df = pd.read_parquet(data_prefix + f'raw_data_{date}')
-    
-    ta_df = pd.DataFrame()
-    for ticker in tickers:
+                data_dict[ticker] = data_dict[ticker].append(minute_df[minute_df['Ticker'] == ticker], sort=False)
+                     
+    #                
+    print()
         
-        # take ticker master_raw_df
-        ticker_df = raw_df[raw_df['ticker'] == ticker].reset_index(drop=True)
-                        
-        # calculate TA variables
-        ticker_df = sf.add_ta_features(ticker_df)
+
+# calculate tendies                
+buy_minutes['Change'] = sell_prices / buy_minutes['Close']
+                   
+# performance
+buy_minutes['Change'].product()
+           
+
+
+
+
+# might want to partition by ticker so we don't have to read in all tickers for
+
+
         
-        # append to master_df
-        ta_df = ta_df.append(ticker_df)
-        
-        # progress
-        cnt += 1
-        print(f"{cnt} / {len(tickers) * len(date_df['date'])}")
-        
-    # write to csv   
-    ta_df.to_parquet(data_prefix + f'ta_data_{date}', index=False)
-    
-    
-buy_df = pd.DataFrame()
-for date in date_df['date']:
-    
-    # turn date to string
-    date = date.strftime('%Y-%m-%d')
-    
-    # read data
-    ta_df = pd.read_parquet(data_prefix + f'ta_data_{date}')
-        
-    # get first buy time and add it to the buy log
-    buy_row = ta_df[ta_df['buy'] == True].sort_values('Datetime').reset_index(drop=True).iloc[0]    
-    buy_df = buy_df.append(buy_row)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
