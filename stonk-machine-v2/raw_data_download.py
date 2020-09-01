@@ -9,20 +9,18 @@ data_prefix = f'C:\\Users\\VanillaBean\\Documents\\PyProjects\\stonk-machine\\da
 # get yahoo finance download arguments: ticker list, end date, start date
 tickers = sf.get_tickers()
 
-tickers = tickers[:10]
-
 # build date lists using only trading days
 nyse = mcal.get_calendar('NYSE')
 date_df = pd.DataFrame()
-date_df['date'] = nyse.schedule(start_date='2020-08-01', end_date='2020-08-27').index
+date_df['date'] = nyse.schedule(start_date='2020-08-04', end_date='2020-08-04').index
 date_df['next_date'] = date_df['date'] + dt.timedelta(1)
 
-# get the raw data then write it out so we don't have to ping yahoo finance every the time
 for date, next_date in zip(date_df['date'], date_df['next_date']):
 
     # get the data then write it out so we don't have to ping yahoo finance every the time
     raw_df = yf.download(tickers, interval="1m", group_by='ticker', start=date, end=next_date)
     
+    # initialize master df
     master_raw_df = pd.DataFrame()
     for ticker in tickers:
         

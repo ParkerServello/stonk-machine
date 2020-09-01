@@ -4,7 +4,10 @@ import ta
 import pandas as pd
 import pandas_market_calendars as mcal
 
+# don't give warnings on indexing
+pd.options.mode.chained_assignment = None
 
+# get today
 today = str(dt.datetime.date(dt.datetime.now()))
 
 def get_stonk_project_path():
@@ -80,16 +83,16 @@ def add_ta_features(df):
     # rsi buy signal
     df['rsi_indicator'] = ta.momentum.rsi(df['Close']) <= 30
     df['rsi_indicator_lag_1'] = df['rsi_indicator'].shift(1)
-    df['rsi_indicator_lag_2'] = df['rsi_indicator'].shift(2)
-    df['rsi_buy'] = [True if any([a,b,c]) else False for a,b,c in zip(df['rsi_indicator'],df['rsi_indicator_lag_1'],df['rsi_indicator_lag_2'])]
+    #df['rsi_indicator_lag_2'] = df['rsi_indicator'].shift(2)
+    df['rsi_buy'] = [True if any([a,b]) else False for a,b in zip(df['rsi_indicator'],df['rsi_indicator_lag_1'])]
     
     # bollinger buy
-    df['bolinger_indicator'] = df['Close'] <= ta.volatility.bollinger_lband(df['Close'])
+    df['bolinger_indicator'] = df['Close'] <= ta.volatility.bollinger_lband(df['Close'], ndev = 3)
     df['bolinger_indicator_lag_1'] = df['bolinger_indicator'].shift(1)
-    df['bolinger_indicator_lag_2'] = df['bolinger_indicator'].shift(2)
-    df['bolinger_indicator_lag_3'] = df['bolinger_indicator'].shift(3)
-    df['bolinger_indicator_lag_4'] = df['bolinger_indicator'].shift(4)
-    df['bolinger_buy'] = [True if any([a,b,c,d,e]) else False for a,b,c,d,e in zip(df['bolinger_indicator'],df['bolinger_indicator_lag_1'],df['bolinger_indicator_lag_2'],df['bolinger_indicator_lag_3'],df['bolinger_indicator_lag_4'])]
+    #df['bolinger_indicator_lag_2'] = df['bolinger_indicator'].shift(2)
+    #df['bolinger_indicator_lag_3'] = df['bolinger_indicator'].shift(3)
+    #df['bolinger_indicator_lag_4'] = df['bolinger_indicator'].shift(4)
+    df['bolinger_buy'] = [True if any([a,b]) else False for a,b in zip(df['bolinger_indicator'],df['bolinger_indicator_lag_1'])]
 
     
     
@@ -106,7 +109,7 @@ def create_day_start_df(date, minutes):
     
     # get previous trading day
     nyse = mcal.get_calendar('NYSE')
-    dates = [date.strftime('%Y-%m-%d') for date in nyse.schedule(start_date='2020-08-13', end_date='2020-08-17').index]
+    dates = [date.strftime('%Y-%m-%d') for date in nyse.schedule(start_date='2020-08-01', end_date='2020-08-27').index]
     previous_date = dates[dates.index(date)-1]
     
     output_df = pd.DataFrame()
@@ -120,13 +123,9 @@ def create_day_start_df(date, minutes):
     minute_df = pd.read_parquet(data_prefix + date + '\\Minute=0')    
     output_df = output_df.append(minute_df)
     
-    return(output_df)
+    return(output_df)    
     
-    
-    
-    
-    
-    
+        
     
     
     

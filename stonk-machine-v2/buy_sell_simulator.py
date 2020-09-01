@@ -6,7 +6,6 @@ import sys
 data_prefix = f'C:\\Users\\VanillaBean\\Documents\\PyProjects\\stonk-machine\\data\\raw_data_'
 
 
-
 # build date lists using only trading days and convert to strings
 dates = mcal.get_calendar('NYSE').schedule(start_date='2020-08-01', end_date='2020-08-25').index
 dates = [date.strftime('%Y-%m-%d') for date in dates]
@@ -82,7 +81,6 @@ for date in dates:
             else:
                 data_dict[ticker] = data_dict[ticker].append(minute_df[minute_df['Ticker'] == ticker], sort=False)
                      
-    #                
     print()
         
 
@@ -92,18 +90,6 @@ buy_minutes['Change'] = sell_prices / buy_minutes['Close']
 # performance
 buy_minutes['Change'].product()
            
-
-
-
-
-# might want to partition by ticker so we don't have to read in all tickers for
-
-
-        
-
-
-
-
 
 
 
